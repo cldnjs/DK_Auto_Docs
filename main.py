@@ -1,3 +1,4 @@
+import os
 import sys
 
 from PyQt5.QtCore import *
@@ -12,9 +13,7 @@ class Form(QWidget):
         QWidget.__init__(self, flags=Qt.Widget)
 
         # 기본 저장 경로 존재여부 확인 후 설정
-        if self.check_default_path() is False:
-            QMessageBox.about(self, 'Message', '기본 저장 경로가 설정되지 않았습니다.')
-            self.set_default_path()
+        self.check_default_path()
 
         # 화면 및 레이아웃 선언
         self.setWindowTitle('DK Auto Docs')
@@ -23,32 +22,37 @@ class Form(QWidget):
         layout = QBoxLayout(QBoxLayout.TopToBottom)
         self.setLayout(layout)
 
-    @staticmethod
-    def check_default_path():
+    def check_default_path(self):
         """
-        기본 저장 경로가 설정되어있는지 확인
-        :return: Bool
+        기본 저장 경로가 설정 여부 판단 후 없으면 설정
+        :return:
         """
         with open('./settings/path.txt', encoding='utf-8') as f:
-            contents = f.readline()
-            if len(contents) <= 0:
-                return False
+            path = f.readline()
+
+            if os.path.exists(path) is False:
+                print('저장된 경로가 실제로 존재하지 않음')
+                QMessageBox.about(self, 'Message', '저장 경로가 올바르지 않습니다.\n다시 설정해주세요.')
+                self.set_default_path()
+
             else:
-                return True
+                print('설정된 저장 경로: {0}'.format(path))
 
     def set_default_path(self):
         """
         기본 저장 경로를 설정
         :return:
         """
-        file = str(QFileDialog.getExistingDirectory(self, '저장 경로 선택'))
+        path = QFileDialog.getExistingDirectory(self, '저장 경로 선택')
 
-        if len(file) <= 0:
+        if len(path) <= 0:
             QMessageBox.about(self, 'Message', '저장 경로를 설정해주세요.')
             self.set_default_path()
+
         else:
             with open('./settings/path.txt', 'w', encoding='utf-8') as f:
-                f.writelines(str(file))
+                f.flush()
+                f.writelines(path)
 
     @staticmethod
     def get_save_path():
@@ -57,9 +61,11 @@ class Form(QWidget):
         :return: String
         """
         with open('./settings/path.txt', 'r', encoding='utf-8') as f:
-            path = str(f.readline())
-
-        return path
+            path = f.readline()
+            if os.path.exists(path) is False:
+                    print('폴더 존재하지 않음')
+            else:
+                return path
 
 
 if __name__ == '__main__':
@@ -71,8 +77,8 @@ if __name__ == '__main__':
         data_only=False
     )
 
+    # 제품명 출력
     product_name = load_column_data(sheet, 2, 4)
-
     for name in product_name:
         if name is None:
             pass
