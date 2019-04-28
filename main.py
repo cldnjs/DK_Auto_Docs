@@ -17,10 +17,13 @@ class Form(QWidget):
 
         # 화면 및 레이아웃 선언
         self.setWindowTitle('DK Auto Docs')
-        self.setFixedSize(500, 300)
         self.setWindowIcon(QIcon('./images/DK_logo.png'))
         layout = QBoxLayout(QBoxLayout.TopToBottom)
         self.setLayout(layout)
+
+        # 위젯 선언 및 적용
+        tw = self.create_table()
+        layout.addWidget(tw)
 
     def check_default_path(self):
         """
@@ -67,24 +70,41 @@ class Form(QWidget):
             else:
                 return path
 
+    @staticmethod
+    def create_table():
+        """
+        엑셀에서 데이터를 읽서와서 QTableWidget 생성
+        :return: QTableWidget
+        """
+        # 엑셀 파일 로드
+        wb, sheet = load_excel(
+            filename='제품목록.xlsx',
+            sheet_name='Sheet1',
+            read_only=False,
+            data_only=False
+        )
+
+        # 제품명, 헤더 얻기
+        product_name = load_column_data(sheet, 2, 4)
+
+        # 엑셀에서 읽은 데이터로 테이블위젯 생성
+        table = QTableWidget()
+        table.setColumnCount(2)
+        table.setRowCount(len(product_name))
+        table.setHorizontalHeaderLabels(['제품명', 'header2'])
+
+        for i in range(0, len(product_name)):
+            table.setItem(i, 0, QTableWidgetItem(product_name[i]))
+
+        # 헤더 넓이 조정
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
+        return table
+
 
 if __name__ == '__main__':
-    # 엑셀 파일 로드
-    wb, sheet = load_excel(
-        filename='제품목록.xlsx',
-        sheet_name='Sheet1',
-        read_only=False,
-        data_only=False
-    )
-
-    # 제품명 출력
-    product_name = load_column_data(sheet, 2, 4)
-    for name in product_name:
-        if name is None:
-            pass
-        else:
-            print(name)
-
     app = QApplication(sys.argv)
     form = Form()
     form.show()

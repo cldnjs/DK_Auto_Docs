@@ -25,9 +25,12 @@ def load_column_data(sheet, col_num, start_num):
     :return: List
     """
     column_data = []
-
     for row in range(start_num, sheet.max_row+1):
-        column_data.append(sheet.cell(row=row, column=col_num).value)
+        data = sheet.cell(row=row, column=col_num).value
+        if data is None:
+            pass
+        else:
+            column_data.append(data)
 
     return column_data
 
@@ -41,8 +44,11 @@ def load_row_data(sheet, row_num, start_num):
     :return: List
     """
     row_data = []
-
-    for col in range(start_num, sheet.max_column):
-        row_data.append(sheet.cell(row=row_num, column=start_num).value)
+    for col in range(start_num, sheet.max_column+1):
+        data = sheet.cell(row=row_num, column=col).value
+        if data is None:
+            pass
+        else:
+            row_data.append(data)
 
     return row_data
