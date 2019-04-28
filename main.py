@@ -30,11 +30,11 @@ class Form(QWidget):
         with open('./settings/path.txt', encoding='utf-8') as f:
             path = f.readline()
 
+            # 경로가 존재하지 않으면 다시 설정
             if os.path.exists(path) is False:
                 print('저장된 경로가 실제로 존재하지 않음')
                 QMessageBox.about(self, 'Message', '저장 경로가 올바르지 않습니다.\n다시 설정해주세요.')
                 self.set_default_path()
-
             else:
                 print('설정된 저장 경로: {0}'.format(path))
 
@@ -45,10 +45,10 @@ class Form(QWidget):
         """
         path = QFileDialog.getExistingDirectory(self, '저장 경로 선택')
 
+        # 저장 경로를 제대로 선택하지 않으면 다시 선택
         if len(path) <= 0:
             QMessageBox.about(self, 'Message', '저장 경로를 설정해주세요.')
             self.set_default_path()
-
         else:
             with open('./settings/path.txt', 'w', encoding='utf-8') as f:
                 f.flush()
