@@ -21,9 +21,21 @@ class Form(QWidget):
         layout = QBoxLayout(QBoxLayout.TopToBottom)
         self.setLayout(layout)
 
-        # 위젯 선언 및 적용
-        tw = self.create_table()
-        layout.addWidget(tw)
+        # 헤더 선언 및 적용
+        self.table = self.create_table()
+        header = self.table.horizontalHeader()
+        header.setDefaultAlignment(Qt.AlignCenter)
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        layout.addWidget(self.table)
+
+        # 적용 버튼 선언
+        self.apply_btn = QPushButton('OK')
+        self.apply_btn.clicked.connect(self.apply_btn_clicked)
+        layout.addWidget(self.apply_btn)
 
     def check_default_path(self):
         """
@@ -71,10 +83,10 @@ class Form(QWidget):
                 return path
 
     @staticmethod
-    def create_table():
+    def get_product_info():
         """
-        엑셀에서 데이터를 읽서와서 QTableWidget 생성
-        :return: QTableWidget
+        엑셀 파일을 읽어 제품 정보를 리스트로 가공
+        :return: List
         """
         # 엑셀 파일 로드
         wb, sheet = load_excel(
@@ -83,25 +95,77 @@ class Form(QWidget):
             read_only=False,
             data_only=False
         )
+        product_list = load_column_data(sheet, 2, 4, 320)
+        standard_list = load_column_data(sheet, 3, 4, 320)
+        buy_price = load_column_data(sheet, 5, 4, 320)
+        correction_price = load_column_data(sheet, 6, 4, 320)
 
-        # 제품명, 헤더 얻기
-        product_name = load_column_data(sheet, 2, 4)
+        product_data = []
+        for i in range(len(product_list)):
+            data = {
+                'product_name': product_list[i],
+                'standard': standard_list[i],
+                'buy_price': buy_price[i],
+                'correction_price': correction_price[i]
+            }
+            product_data.append(data)
 
-        # 엑셀에서 읽은 데이터로 테이블위젯 생성
+        return product_data
+
+    def create_table(self):
+        """
+        엑셀에서 데이터를 읽서와서 QTableWidget 생성
+        :return: QTableWidget
+        """
+        # 엑셀에서 받은 데이터로 테이블 생성
+        product_data = self.get_product_info()
+
         table = QTableWidget()
-        table.setColumnCount(2)
-        table.setRowCount(len(product_name))
-        table.setHorizontalHeaderLabels(['제품명', 'header2'])
+        table.setColumnCount(5)
+        table.setRowCount(len(product_data))
+        table.setHorizontalHeaderLabels(['선택', '설비명', '규격', '구입', '교정'])
 
-        for i in range(0, len(product_name)):
-            table.setItem(i, 0, QTableWidgetItem(product_name[i]))
+        # 셀에 데이터 체우기 및 체크박스 추가
+        for idx, data in enumerate(product_data):
+            product_name = QTableWidgetItem(data['product_name'])
+            standard = QTableWidgetItem(data['standard'])
 
-        # 헤더 넓이 조정
-        header = table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            if data['buy_price'] is None:
+                buy_price = QTableWidgetItem('')
+            else:
+                buy_price = QTableWidgetItem(str(data['buy_price']))
+
+            if data['correction_price'] is None:
+                correction_price = QTableWidgetItem('')
+            else:
+                correction_price = QTableWidgetItem(str(data['correction_price']))
+
+            product_name.setTextAlignment(Qt.AlignCenter)
+            standard.setTextAlignment(Qt.AlignCenter)
+            buy_price.setTextAlignment(Qt.AlignCenter)
+            correction_price.setTextAlignment(Qt.AlignCenter)
+
+            table.setItem(idx, 1, product_name)
+            table.setItem(idx, 2, standard)
+            table.setItem(idx, 3, buy_price)
+            table.setItem(idx, 4, correction_price)
+
+        for i in range(table.rowCount()):
+            ch = QCheckBox(parent=table)
+            ch.clicked.connect(self.product_checked)
+            table.setCellWidget(i, 0, ch)
 
         return table
+
+    @pyqtSlot()
+    def apply_btn_clicked(self):
+        print('apply button clicked')
+
+    @pyqtSlot()
+    def product_checked(self):
+        ch = self.sender()
+        ix = self.table.indexAt(ch.pos())
+        print(ix.row(), ix.column(), ch.isChecked())
 
 
 if __name__ == '__main__':
